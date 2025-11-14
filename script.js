@@ -8,23 +8,20 @@ class Paper {
   currentY = 0;
   prevX = 0;
   prevY = 0;
-  velX = 0;
-  velY = 0;
-  rotation = Math.random() * 30 - 15;
   currentPaperX = 0;
   currentPaperY = 0;
-  rotating = false;
+  rotation = Math.random() * 30 - 15;
 
   init(paper) {
     // Mouse events for desktop
     paper.addEventListener('mousedown', (e) => {
-      this.handleStart(e.clientX, e.clientY, paper, e);
+      this.handleStart(e.clientX, e.clientY, paper);
     });
 
     // Touch events for mobile
     paper.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      this.handleStart(e.touches[0].clientX, e.touches[0].clientY, paper, e);
+      this.handleStart(e.touches[0].clientX, e.touches[0].clientY, paper);
     });
 
     // Mouse move for desktop
@@ -38,26 +35,22 @@ class Paper {
       this.handleMove(e.touches[0].clientX, e.touches[0].clientY, paper);
     });
 
-    // Mouse up for desktop
+    // End events
     window.addEventListener('mouseup', () => {
       this.handleEnd();
     });
 
-    // Touch end for mobile
     window.addEventListener('touchend', () => {
       this.handleEnd();
     });
 
-    // Context menu for right click rotation (desktop)
+    // Prevent context menu
     paper.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      if (this.holdingPaper) {
-        this.rotating = true;
-      }
     });
   }
 
-  handleStart(clientX, clientY, paper, event) {
+  handleStart(clientX, clientY, paper) {
     if (this.holdingPaper) return;
 
     this.holdingPaper = true;
@@ -68,11 +61,6 @@ class Paper {
     this.startY = clientY;
     this.prevX = clientX;
     this.prevY = clientY;
-
-    // Right mouse button or long press for rotation
-    if (event.button === 2 || event.touches) {
-      this.rotating = true;
-    }
   }
 
   handleMove(clientX, clientY, paper) {
@@ -81,32 +69,23 @@ class Paper {
     this.currentX = clientX;
     this.currentY = clientY;
 
-    this.velX = this.currentX - this.prevX;
-    this.velY = this.currentY - this.prevY;
+    // Calculate movement
+    const deltaX = this.currentX - this.prevX;
+    const deltaY = this.currentY - this.prevY;
 
-    // Calculate rotation based on movement direction
-    const dirX = this.currentX - this.startX;
-    const dirY = this.currentY - this.startY;
-
-    if (this.rotating) {
-      const angle = Math.atan2(dirY, dirX);
-      let degrees = (180 * angle / Math.PI + 360) % 360;
-      this.rotation = degrees;
-    } else {
-      // Move the paper
-      this.currentPaperX += this.velX;
-      this.currentPaperY += this.velY;
-    }
+    // Update paper position
+    this.currentPaperX += deltaX;
+    this.currentPaperY += deltaY;
 
     this.prevX = this.currentX;
     this.prevY = this.currentY;
 
+    // Apply transform - only translation, keep original rotation
     paper.style.transform = `translateX(${this.currentPaperX}px) translateY(${this.currentPaperY}px) rotateZ(${this.rotation}deg)`;
   }
 
   handleEnd() {
     this.holdingPaper = false;
-    this.rotating = false;
   }
 }
 
@@ -127,6 +106,11 @@ style.textContent = `
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    cursor: grab;
+  }
+  
+  .paper:active {
+    cursor: grabbing;
   }
   
   body {
@@ -135,6 +119,8 @@ style.textContent = `
     overflow: hidden;
     touch-action: none;
     -webkit-tap-highlight-color: transparent;
+    width: 100vw;
+    height: 100vh;
   }
   
   * {
